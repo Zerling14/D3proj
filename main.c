@@ -5,7 +5,6 @@ HANDLE hProcess;
 float view_matrix[4][4];
 float proj_matrix[4][4];
 int world_to_screen(float* from, float* to);
-RECT rect;
 HWND hWnd;
 float my_coords[3];
 HDC hDC;
@@ -13,10 +12,10 @@ void get_process_handle();
 int read_bytes(PCVOID addr, int num, void* buf);
 void get_view_matrix();
 void print_4x4_matrix(void *matrix);
-void get_player_cord(float *x, float *y);
+void get_player_cord(float *x, float *y, float *z);
 DWORD get_num_local_player();
 void print_1x4_matrix(void *matrix);
-void mul_matrix(void *matrix1, int x1, int y1, void *matrix2, int x2, int y2, void **matrix3, int *x3, int *y3);
+void mul_matrix(void *matrix1, int x1, int y1, void *matrix2, int x2, int y2, void **matrix3);
 
 
 
@@ -34,20 +33,25 @@ int main(int argc, char** argv)
 	//PDWORD pdwFinalAddress = ( PDWORD )*( PDWORD )( pdwAddress + 150 );
 	
 	printf("hWnd:%d\n",(int)hWnd);
-	float x,y;
-	get_player_cord(&x, &y);
-	get_view_matrix();
-float matrix1[1][4] = {{1,2,3,4}};
-	float matrix2[4][4] = {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}};
-	printf("\n");
-	print_1x4_matrix(matrix1);
-	printf("\n");
-	print_4x4_matrix(matrix2);
-	printf("\n");
-	int x3,y3;
-	float *matrix3;
-	mul_matrix(matrix1, 1, 4, matrix2, 4, 4, (PVOID)&matrix3, &x3, &y3);
-	print_1x4_matrix(matrix3);
+	
+	float position_player[3] = {544.743652, 750.832764, 2.620766};
+	float position_in_screen[2];
+	//get_player_cord(&position_player[0], &position_player[1], &position_player[2]);
+	
+	world_to_screen(position_player, position_in_screen);
+	
+	//get_view_matrix();
+	//float matrix1[1][4] = {{1,2,3,4}};
+	//float matrix2[4][4] = {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}};
+	//printf("\n");
+	//print_1x4_matrix(matrix1);
+	//printf("\n");
+	//print_4x4_matrix(matrix2);
+	//printf("\n");
+	//int x3,y3;
+	//float *matrix3;
+	//mul_matrix(matrix1, 1, 4, matrix2, 4, 4, (PVOID)&matrix3, &x3, &y3);
+	//print_1x4_matrix(matrix3);
 	//printf("%f\n", (*matrix3);
 	CloseHandle(hProcess);
     return 0;
@@ -55,19 +59,33 @@ float matrix1[1][4] = {{1,2,3,4}};
 
 int world_to_screen(float* from, float* to)
 {
+	RECT rect;
+	
 	GetWindowRect(FindWindow(0, "Diablo III"), &rect);
-	float w = 0.0f;
-	to[0] = view_matrix[0][0] * from[0] + view_matrix[0][1] * from[1] +	view_matrix[0][2] * from[2] + view_matrix[0][3] ;
-	to[1] = view_matrix[1][0] * from[0] + view_matrix[1][1] * from[1] + view_matrix[1][2] * from[2] + view_matrix[1][3] ;
-	w     = view_matrix[2][0] * from[0] + view_matrix[2][1] * from[1] + view_matrix[2][2] * from[2] + view_matrix[2][3] ;
+	float point[1][4] = {{from[0], from[1],from[2],1}};
+	get_view_matrix();
+	float *point_from_vm = NULL;
+	mul_matrix(point, 1, 4, view_matrix, 4, 4, (PVOID)&point_from_vm);
 	
-	printf("%f,%f,%f\n", to[0], to[1], w);
+	if(point_from_vm == NULL){
+		printf("w2c vm error\n");
+		return 0;
+	}
+	float *point_from_pm = NULL;
+	point_from_vm[0] = point_from_vm[0] * (1 / point_from_vm[2]);
+	point_from_vm[1] = point_from_vm[1] * (1 / point_from_vm[2]);
 	
-	//if (w < 0.01f) 
-	//	return 0;
-	float invw = 1.0f / w;
-	to[0] *= invw;
-	to[1] *= invw;
+	mul_matrix(point_from_vm, 1, 4, proj_matrix, 4, 4, (PVOID)&point_from_pm);
+	
+	if(point_from_pm == NULL){
+		printf("w2c pm error\n");
+		return 0;
+	}
+	printf("\n");	
+	print_1x4_matrix(point_from_vm);
+	print_1x4_matrix(point_from_pm);
+	to[0] = point_from_pm[0] * -1;
+	to[1] = point_from_pm[1] * -1;
 	int width = (int)(rect.right - rect.left);
 	int height = (int)(rect.bottom - rect.top);
 	float x = width/2;
@@ -76,7 +94,8 @@ int world_to_screen(float* from, float* to)
     y -= 0.5 * to[1] * height + 0.5;
 	to[0] = x + rect.left;
 	to[1] = y + rect.top;
-	printf("%f,%f\n", to[0], to[1]);
+	//printf("%d,%d\n", (int)to[0], (int)to[1]);
+	//SetCursorPos((int)to[0], (int)to[1]+30);
 	return 1;
 }
 
@@ -115,10 +134,9 @@ void get_view_matrix()
 	print_4x4_matrix(view_matrix);
 	printf("\n");
 	print_4x4_matrix(proj_matrix);
-	//printf("%f\n",view_matrix[0][0]);
 }
 
-void get_player_cord(float *x, float *y)
+void get_player_cord(float *x, float *y, float *z)
 {
 	DWORD baseEntityList = 0xFFFDDEC0;
 	DWORD tmp;
@@ -134,9 +152,10 @@ void get_player_cord(float *x, float *y)
 	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
 	read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD0)),	sizeof(x), x);
 	read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD4)),	sizeof(y), y);
+	read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD8)),	sizeof(z), z);
 	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD0)),	sizeof(x), x);
 	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD4)),	sizeof(y), y);
-	printf("Pointer:%lX:x:%f:y:%f\n", tmp, *x, *y);
+	printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
 	//read_bytes((PCVOID)(tmp),				sizeof(tmp), &tmp1);
 }
 
@@ -149,7 +168,7 @@ DWORD get_num_local_player()
 	read_bytes((PCVOID)(baseNumPlayer),			sizeof(tmp), &tmp);
 	read_bytes((PCVOID)(tmp + 0x8F4),			sizeof(tmp), &tmp1);
 	read_bytes((PCVOID)(tmp1 + 0x3c), 			1, &result);
-	printf("get_num_local_player:%lX\n",result);
+	//printf("get_num_local_player:%lX\n",result);
 	return result;
 }
 
@@ -173,7 +192,7 @@ void print_4x4_matrix(void *matrix)
 
 void mul_matrix(void *matrix1, int x1, int y1, 
 				 void *matrix2, int x2, int y2, 
-				 void **matrix3, int *x3, int *y3)
+				 void **matrix3)
 {
 	if(y1 != x2){
 		printf("mul_matrix: incorrect matrix\n");
