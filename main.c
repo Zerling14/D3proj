@@ -48,6 +48,7 @@ float matrix1[1][4] = {{1,2,3,4}};
 	float *matrix3;
 	mul_matrix(matrix1, 1, 4, matrix2, 4, 4, (PVOID)&matrix3, &x3, &y3);
 	print_1x4_matrix(matrix3);
+	//printf("%f\n", (*matrix3);
 	CloseHandle(hProcess);
     return 0;
 }
@@ -154,7 +155,7 @@ DWORD get_num_local_player()
 
 void print_1x4_matrix(void *matrix)
 {
-	for(int i = 0; i < 4; i++){
+	for (int i = 0; i < 4; i++){
 		printf("%10.4f ", *(float*)(matrix+4*i));
 	}
 	printf("\n");
@@ -162,8 +163,8 @@ void print_1x4_matrix(void *matrix)
 
 void print_4x4_matrix(void *matrix)
 {
-	for(int i = 0; i < 4; i++){
-		for(int j = 0; j < 4; j++){
+	for (int i = 0; i < 4; i++){
+		for (int j = 0; j < 4; j++){
 			printf("%10.4f ", *(float*)(matrix+4*j+4*4*i));
 		}
 		printf("\n");
@@ -174,16 +175,23 @@ void mul_matrix(void *matrix1, int x1, int y1,
 				 void *matrix2, int x2, int y2, 
 				 void **matrix3, int *x3, int *y3)
 {
-	if(y1 != x2)
+	if(y1 != x2){
 		printf("mul_matrix: incorrect matrix\n");
 		return;
-	*matrix3 = calloc( x1 * y2, sizeof(float));
+	}
+	*matrix3 = calloc(x1 * y2, sizeof(float));
+	//*(float *)*matrix3 = 1;
+	//printf("%p\n", (float *) *matrix3 );
+	
 	for (int i = 0; i < x1; i++){
-		for(int j = 0; j < y2; j++){
+		for (int j = 0; j < y2; j++){
 			float sum = 0;
-			for(int k = 0; k < x1; k++){}
-				//sum += (*(float*)(matrix1+4*j+4*4*k)) * (*(float*)(matrix2+4*k+4*4*j));
-			//*(float*)(matrix3+4*j+4*4*i) = sum;
+			for (int k = 0; k < y1; k++){
+				sum += *((float *) matrix1 + 4 * i + k) * *((float *) matrix2 + 4 * k + j);
+				//printf("m1:%f : m2:%f\n",*((float *) matrix1 + 4 * i + k), *((float *) matrix2 + 4 * k + j));
+			}
+			*((float *) *matrix3 + 4 * i + j) = sum;
+			//printf("P:%p sum:%d\n",(float *) *matrix3 + 4 * i + j, (int)sum);
 		}
 	}
 }
