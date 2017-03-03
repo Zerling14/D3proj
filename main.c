@@ -17,7 +17,8 @@ DWORD get_num_local_player();
 void print_1x4_matrix(void *matrix);
 void mul_matrix(void *matrix1, int x1, int y1, void *matrix2, int x2, int y2, void **matrix3);
 int get_num_elemets_in_entity();
-
+int get_name_by_num(int num, char* buf, int n);
+void get_cord_by_num(int num, float *x, float *y, float *z);
 
 
 
@@ -33,12 +34,25 @@ int main(int argc, char** argv)
 	//PDWORD pdwFinalAddress = ( PDWORD )*( PDWORD )( pdwAddress + 150 );
 	
 	printf("hWnd:%d\n",(int)hWnd);
-	
-	float position_player[3] = {544.743652, 750.832764, 2.620766};
-	float position_in_screen[2];
+	//float x1, y1, z1;
+	//get_cord_by_num(0x1D9, &x1, &y1, &z1);
+	//float position_player[3] = {x1, y1, z1};
+	//float position_in_screen[2];
 	//get_player_cord(&position_player[0], &position_player[1], &position_player[2]);
 	
-	world_to_screen(position_player, position_in_screen);
+	//world_to_screen(position_player, position_in_screen);
+	int max = get_num_elemets_in_entity();
+	int j = 0;
+	for (int i = 0; i <= max; i++){
+		char buf[64] = {};
+		if (get_name_by_num(i, buf, 64)){
+			float x, y, z;
+			get_cord_by_num(i, &x, &y, &z);
+			printf("Cord: %6.2f %6.2f %6.2f Name %X element: %s\n", x, y, z, i, buf);
+			j++;
+		}
+	}
+	printf("Num of valid elements:%X\n", j);
 	
 	//get_view_matrix();
 	//float matrix1[1][4] = {{1,2,3,4}};
@@ -95,7 +109,7 @@ int world_to_screen(float* from, float* to)
 	to[0] = x + rect.left;
 	to[1] = y + rect.top;
 	//printf("%d,%d\n", (int)to[0], (int)to[1]);
-	//SetCursorPos((int)to[0], (int)to[1]+30);
+	//SetCursorPos((int)to[0], (int)to[1]);
 	return 1;
 }
 
@@ -226,7 +240,53 @@ int get_num_elemets_in_entity()
 	read_bytes((PCVOID)(tmp1), 						sizeof(tmp), &tmp);
 	read_bytes((PCVOID)(tmp + 0x160), 				sizeof(tmp), &tmp1);
 	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
-	return num;
+	read_bytes((PCVOID)(tmp + 0x108), 				sizeof(tmp), &tmp1);
+	printf("num elements in entity:%lX\n",tmp1);
+	return (int)tmp1;
+}
+
+int get_name_by_num(int num, char* buf, int n)
+{
+
+	DWORD baseEntityList = 0xFFFDDEC0;
+	DWORD tmp;
+	DWORD tmp1;
+	
+	read_bytes((PCVOID)(baseEntityList),			sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp),						sizeof(tmp), &tmp1);
+	read_bytes((PCVOID)(tmp1), 						sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp + 0x160), 				sizeof(tmp), &tmp1);
+	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp + 0x120),				sizeof(tmp), &tmp1);
+	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp + (0x2F8 * num) ),	4, &tmp1);
+	if ((int) tmp1 == -1) {
+		return 0;
+	}
+	read_bytes((PCVOID)(tmp + (0x2F8 * num) + 4),	n, buf);
+	return 1;
+}
+
+void get_cord_by_num(int num, float *x, float *y, float *z)
+{
+	DWORD baseEntityList = 0xFFFDDEC0;
+	DWORD tmp;
+	DWORD tmp1;
+	//FFFDDEC0->1014CC60->1014CCD0->158332B0+160->116BA650->117D0F50+120->11A91B20->1B589D80 + (2F8 * num) + 188 = HP
+
+	read_bytes((PCVOID)(baseEntityList),			sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp),						sizeof(tmp), &tmp1);
+	read_bytes((PCVOID)(tmp1), 						sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp + 0x160), 				sizeof(tmp), &tmp1);
+	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp + 0x120),				sizeof(tmp), &tmp1);
+	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp + (0x2F8 * num + 0xD0)),	sizeof(x), x);
+	read_bytes((PCVOID)(tmp + (0x2F8 * num + 0xD4)),	sizeof(y), y);
+	read_bytes((PCVOID)(tmp + (0x2F8 * num + 0xD8)),	sizeof(z), z);
+	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD0)),	sizeof(x), x);
+	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD4)),	sizeof(y), y);
+	//printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
 }
 
 int read_bytes(PCVOID addr, int num, void *buf)
