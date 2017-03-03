@@ -16,7 +16,7 @@ void get_player_cord(float *x, float *y, float *z);
 DWORD get_num_local_player();
 void print_1x4_matrix(void *matrix);
 void mul_matrix(void *matrix1, int x1, int y1, void *matrix2, int x2, int y2, void **matrix3);
-
+int get_num_elemets_in_entity();
 
 
 
@@ -215,6 +215,19 @@ void mul_matrix(void *matrix1, int x1, int y1,
 	}
 }
 
+int get_num_elemets_in_entity()
+{
+	DWORD baseEntityList = 0xFFFDDEC0;
+	DWORD tmp;
+	DWORD tmp1;
+
+	read_bytes((PCVOID)(baseEntityList),			sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp),						sizeof(tmp), &tmp1);
+	read_bytes((PCVOID)(tmp1), 						sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp + 0x160), 				sizeof(tmp), &tmp1);
+	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
+	return num;
+}
 
 int read_bytes(PCVOID addr, int num, void *buf)
 {
