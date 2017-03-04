@@ -25,14 +25,14 @@ void get_cord_by_num(int num, float *x, float *y, float *z);
 int main(int argc, char** argv)
 {
 	get_process_handle();
-	//float from[3] = {545.92, 752.46, 2.68};
+	//float from[3] = {380.23, 354.14, 0.50};
 	//float to[3];
 	//world_to_screen(from, to);
 	// [[[BaseAddress + 0x26767C]+0x598]+0x1EC]+0x9F2
 	//PDWORD BaseAddress = (PDWORD)0x01C12E98;
 	//PDWORD pdwAddress = ( PDWORD )*( PDWORD )(BaseAddress + 0xA0);
 	//PDWORD pdwFinalAddress = ( PDWORD )*( PDWORD )( pdwAddress + 150 );
-	
+	//itemFlippy_deathsBreath_Flippy_Global
 	printf("hWnd:%d\n",(int)hWnd);
 	//float x1, y1, z1;
 	//get_cord_by_num(0x1D9, &x1, &y1, &z1);
@@ -41,18 +41,31 @@ int main(int argc, char** argv)
 	//get_player_cord(&position_player[0], &position_player[1], &position_player[2]);
 	
 	//world_to_screen(position_player, position_in_screen);
-	int max = get_num_elemets_in_entity();
-	int j = 0;
-	for (int i = 0; i <= max; i++){
-		char buf[64] = {};
-		if (get_name_by_num(i, buf, 64)){
-			float x, y, z;
-			get_cord_by_num(i, &x, &y, &z);
-			printf("Cord: %6.2f %6.2f %6.2f Name %X element: %s\n", x, y, z, i, buf);
-			j++;
+	while(1) {
+		if(GetAsyncKeyState(0x43)) {
+			int max = get_num_elemets_in_entity();
+			int j = 0;
+			int closest_num = -1;
+			
+			for (int i = 0; i <= max; i++){
+				char buf[64] = {};
+				if (get_name_by_num(i, buf, 64)){
+					
+					if (strstr(buf, "itemFlippy_deathsBreath_Flippy_Global") != 0)
+					{
+						float x, y, z;
+						get_cord_by_num(i, &x, &y, &z);
+						float from[3] = {x, y, z};
+						float to[3];
+						world_to_screen(from, to);
+						printf("Cord: %6.2f %6.2f %6.2f Name %X element: %s\n", x, y, z, i, buf);
+						break;
+					}
+				}
+			}
+			Sleep(100);
 		}
 	}
-	printf("Num of valid elements:%X\n", j);
 	
 	//get_view_matrix();
 	//float matrix1[1][4] = {{1,2,3,4}};
@@ -110,6 +123,12 @@ int world_to_screen(float* from, float* to)
 	to[1] = y + rect.top;
 	//printf("%d,%d\n", (int)to[0], (int)to[1]);
 	//SetCursorPos((int)to[0], (int)to[1]);
+	//Sleep(100);
+	//mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+	SendMessage(hWnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
+	Sleep(100);
+	SendMessage(hWnd, WM_LBUTTONUP, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
+	
 	return 1;
 }
 
