@@ -2,6 +2,15 @@
 #include <stdio.h>
 #include <math.h>
 
+#define OFFSET_X		0xD0
+#define OFFSET_Y		0xD4
+#define OFFSET_Z		0xD8
+#define OFFSET_ID		0
+#define OFFSET_NAME 	0x4
+#define OFFSET_ISENEMY	0x94
+#define OFFSET_ININVENT	0xBC
+
+
 typedef struct {
 	float x;
 	float y;
@@ -25,9 +34,11 @@ void print_1x4_matrix(void *matrix);
 void mul_matrix(void *matrix1, int x1, int y1, void *matrix2, int x2, int y2, void **matrix3);
 int get_num_elemets_in_entity();
 int get_name_by_num(int num, char* buf, int n);
-void get_cord_by_num(int num, float *x, float *y, float *z);
+int get_cord_by_num(int num, float *x, float *y, float *z);
 //float get_dist_by_vec(float *vec1, float *vec2);
 float get_dist_by_vec(const Vector3 vec1, const Vector3 vec2);
+DWORD get_entity_pointer();
+int get_unit_info_by_offset(int num, DWORD off , size_t size, void *data);
 
 
 
@@ -56,31 +67,43 @@ int main(int argc, char** argv)
 	// itemFlippy_deathsBreath_Flippy_Global DROPED DEATHBREATH
 	// CraftingMaterials_Flippy_Global DROPED COMMON(WHITE) REAGENT
 	
-	// int max = get_num_elemets_in_entity();
-	// int j = 0;
-	
-	// for (int i = 0; i <= max; i++){
-		// char buf[64] = {};
-		// if (get_name_by_num(i, buf, 64)){
+	// float x, y, z;
+	// get_cord_by_num(0x52, &x, &y, &z);
+	// float from[3] = {x, y, z};
+	// float to[3];
+	// world_to_screen(from, to);
 			
-			// if (strstr(buf, "Flippy") != 0)
-			// {
-				// float x, y, z;
-				// get_cord_by_num(i, &x, &y, &z);
-				// printf("Cord: %6.2f %6.2f %6.2f Name %X element: %s\n", x, y, z, i, buf);
-				// j++;
-			// }
-		// }
-	// }
-	// printf("Total:%d", j);
 	// return 0;
 	
+	int max = get_num_elemets_in_entity();
+	int j = 0;
+
+	for (int i = 0; i <= max; i++){
+		char buf[128] = {};
+		if (get_name_by_num(i, buf, 128)){
+
+			//if (strstr(buf, "flippy") != 0)
+			{
+				float x, y, z;
+				get_cord_by_num(get_num_local_player(), &x, &y, &z);
+				Vector3 hero = {x, y, z};
+
+				get_cord_by_num(i, &x, &y, &z);
+				Vector3 from = {x, y, z};
+				printf("Dist:%7.2f Cord:%7.2f%7.2f%7.2f Name %X element: %s\n", get_dist_by_vec(hero, from), x, y, z, i, buf);
+				j++;
+			}
+		}
+	}
+	printf("Total:%d", j);
+	return 0;
+
 	while(1) {
 		if (GetAsyncKeyState(0x43)) {
 			int max = get_num_elemets_in_entity();
 			int j = 0;
 			int closest_num = -1;
-			
+
 			for (int i = 0; i <= max; i++) {
 				char buf[64] = {};
 				if (get_name_by_num(i, buf, 64)) {
@@ -143,6 +166,8 @@ int main(int argc, char** argv)
     return 0;
 }
 
+
+
 // float get_dist_by_vec(float *vec1, float *vec2)
 // {
 	// float tmp_vec[3] = {vec1[0] - vec2[0], vec1[1] - vec2[1], vec1[2] - vec2[2]};
@@ -192,8 +217,10 @@ int world_to_screen(float* from, float* to)
     y -= 0.5 * to[1] * height + 0.5;
 	to[0] = x + rect.left;
 	to[1] = y + rect.top;
+	free(point_from_vm);
+	free(point_from_pm);
 	//printf("%d,%d\n", (int)to[0], (int)to[1]);
-	//SetCursorPos((int)to[0], (int)to[1]);
+	SetCursorPos((int)to[0], (int)to[1]);
 	//Sleep(100);
 	//mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 	
@@ -239,21 +266,11 @@ void get_view_matrix()
 
 void get_player_cord(float *x, float *y, float *z)
 {
-	DWORD baseEntityList = 0xFFFDDEC0;
-	DWORD tmp;
-	DWORD tmp1;
-	//FFFDDEC0->1014CC60->1014CCD0->158332B0+160->116BA650->117D0F50+120->11A91B20->1B589D80 + (2F8 * num) + 188 = HP
-
-	read_bytes((PCVOID)(baseEntityList),			sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp),						sizeof(tmp), &tmp1);
-	read_bytes((PCVOID)(tmp1), 						sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp + 0x160), 				sizeof(tmp), &tmp1);
-	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp + 0x120),				sizeof(tmp), &tmp1);
-	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD0)),	sizeof(x), x);
-	read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD4)),	sizeof(y), y);
-	read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD8)),	sizeof(z), z);
+	//DWORD tmp = get_entity_pointer();
+	get_cord_by_num(get_num_local_player(), x, y, z);
+	// read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD0)),	sizeof(x), x);
+	// read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD4)),	sizeof(y), y);
+	// read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD8)),	sizeof(z), z);
 	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD0)),	sizeof(x), x);
 	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD4)),	sizeof(y), y);
 	//printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
@@ -262,7 +279,7 @@ void get_player_cord(float *x, float *y, float *z)
 
 DWORD get_num_local_player()
 {
-	DWORD baseNumPlayer = 0x1c12e98; //- Base entity list
+	DWORD baseNumPlayer = 0x1C12E98; //- Base entity list(not entity)
 	DWORD tmp;
 	DWORD tmp1;
 	DWORD result = 0;
@@ -334,27 +351,57 @@ int get_num_elemets_in_entity()
 
 int get_name_by_num(int num, char* buf, int n)
 {
-
-	DWORD baseEntityList = 0xFFFDDEC0;
-	DWORD tmp;
+	DWORD tmp = get_entity_pointer();
 	DWORD tmp1;
-	
-	read_bytes((PCVOID)(baseEntityList),			sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp),						sizeof(tmp), &tmp1);
-	read_bytes((PCVOID)(tmp1), 						sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp + 0x160), 				sizeof(tmp), &tmp1);
-	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp + 0x120),				sizeof(tmp), &tmp1);
-	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp + (0x2F8 * num) ),	4, &tmp1);
+	if (!get_unit_info_by_offset(num, OFFSET_ID , sizeof(tmp1), &tmp1)) {
+		printf("Error get name by num\n");
+		return 0;
+	}
+	//read_bytes((PCVOID)(tmp + (0x2F8 * num) ),	4, &tmp1);
 	if ((int) tmp1 == -1) {
 		return 0;
 	}
-	read_bytes((PCVOID)(tmp + (0x2F8 * num) + 4),	n, buf);
+	if (!get_unit_info_by_offset(num, OFFSET_NAME , n, buf)) {
+		printf("Error get name by num\n");
+		return 0;
+	}
 	return 1;
 }
 
-void get_cord_by_num(int num, float *x, float *y, float *z)
+int get_cord_by_num(int num, float *x, float *y, float *z)
+{
+	if (!get_unit_info_by_offset(num, OFFSET_X , sizeof(float), x)) {
+		printf("Error cord by num\n");
+		return 0;
+	}
+	if (!get_unit_info_by_offset(num, OFFSET_Y , sizeof(float), y)) {
+		printf("Error cord by num\n");
+		return 0;
+	}
+	if (!get_unit_info_by_offset(num, OFFSET_Z , sizeof(float), z)) {
+		printf("Error cord by num\n");
+		return 0;
+	}
+	return 1;
+	//DWORD tmp = get_entity_pointer();
+	// read_bytes((PCVOID)(tmp + (0x2F8 * num + OFFSET_X)), sizeof(x), x);
+	// read_bytes((PCVOID)(tmp + (0x2F8 * num + OFFSET_Y)), sizeof(y), y);
+	// read_bytes((PCVOID)(tmp + (0x2F8 * num + OFFSET_Z)), sizeof(z), z);
+	//printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
+}
+
+int get_unit_info_by_offset(int num, DWORD off , size_t size, void *data)
+{
+	DWORD tmp = get_entity_pointer();
+	
+	if (!read_bytes((PCVOID)(tmp + (0x2F8 * num + off)), size, data)) {
+		printf("Error get unit info by offset\n");
+		return 0;
+	}
+	return 1;
+}
+
+DWORD get_entity_pointer()
 {
 	DWORD baseEntityList = 0xFFFDDEC0;
 	DWORD tmp;
@@ -367,10 +414,7 @@ void get_cord_by_num(int num, float *x, float *y, float *z)
 	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
 	read_bytes((PCVOID)(tmp + 0x120),				sizeof(tmp), &tmp1);
 	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp + (0x2F8 * num + 0xD0)),	sizeof(x), x);
-	read_bytes((PCVOID)(tmp + (0x2F8 * num + 0xD4)),	sizeof(y), y);
-	read_bytes((PCVOID)(tmp + (0x2F8 * num + 0xD8)),	sizeof(z), z);
-	//printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
+	return tmp;
 }
 
 int read_bytes(PCVOID addr, int num, void *buf)
