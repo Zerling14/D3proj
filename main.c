@@ -1,5 +1,12 @@
 #include <windows.h>
 #include <stdio.h>
+#include <math.h>
+
+typedef struct {
+	float x;
+	float y;
+	float z;
+} Vector3;
 
 HANDLE hProcess;
 float view_matrix[4][4];
@@ -19,6 +26,9 @@ void mul_matrix(void *matrix1, int x1, int y1, void *matrix2, int x2, int y2, vo
 int get_num_elemets_in_entity();
 int get_name_by_num(int num, char* buf, int n);
 void get_cord_by_num(int num, float *x, float *y, float *z);
+//float get_dist_by_vec(float *vec1, float *vec2);
+float get_dist_by_vec(const Vector3 vec1, const Vector3 vec2);
+
 
 
 
@@ -41,28 +51,77 @@ int main(int argc, char** argv)
 	//get_player_cord(&position_player[0], &position_player[1], &position_player[2]);
 	
 	//world_to_screen(position_player, position_in_screen);
+	
+	// ITEM NAMES
+	// itemFlippy_deathsBreath_Flippy_Global DROPED DEATHBREATH
+	// CraftingMaterials_Flippy_Global DROPED COMMON(WHITE) REAGENT
+	
+	// int max = get_num_elemets_in_entity();
+	// int j = 0;
+	
+	// for (int i = 0; i <= max; i++){
+		// char buf[64] = {};
+		// if (get_name_by_num(i, buf, 64)){
+			
+			// if (strstr(buf, "Flippy") != 0)
+			// {
+				// float x, y, z;
+				// get_cord_by_num(i, &x, &y, &z);
+				// printf("Cord: %6.2f %6.2f %6.2f Name %X element: %s\n", x, y, z, i, buf);
+				// j++;
+			// }
+		// }
+	// }
+	// printf("Total:%d", j);
+	// return 0;
+	
 	while(1) {
-		if(GetAsyncKeyState(0x43)) {
+		if (GetAsyncKeyState(0x43)) {
 			int max = get_num_elemets_in_entity();
 			int j = 0;
 			int closest_num = -1;
 			
-			for (int i = 0; i <= max; i++){
+			for (int i = 0; i <= max; i++) {
 				char buf[64] = {};
-				if (get_name_by_num(i, buf, 64)){
-					
-					if (strstr(buf, "itemFlippy_deathsBreath_Flippy_Global") != 0)
-					{
+				if (get_name_by_num(i, buf, 64)) {
+					if (strstr(buf, "itemFlippy_deathsBreath_Flippy_Global") != 0) {
+						if (closest_num == -1) {
+							closest_num = i;
+						}
+						
 						float x, y, z;
 						get_cord_by_num(i, &x, &y, &z);
-						float from[3] = {x, y, z};
-						float to[3];
-						world_to_screen(from, to);
-						printf("Cord: %6.2f %6.2f %6.2f Name %X element: %s\n", x, y, z, i, buf);
-						break;
+						Vector3 from = {x, y, z};
+						
+						get_cord_by_num(get_num_local_player(), &x, &y, &z);
+						Vector3 hero_cord = {x, y, z};
+						
+						get_cord_by_num(closest_num, &x, &y, &z);
+						Vector3 closest_cord = {x, y, z};
+						
+						if (get_dist_by_vec(hero_cord, from) <  get_dist_by_vec(hero_cord, closest_cord)) {
+							closest_num = i;
+						}
+						//float to[3];
+						//world_to_screen(from, to);
+						//SendMessage(hWnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
+						//Sleep(100);
+						//SendMessage(hWnd, WM_LBUTTONUP, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
+						printf("Dist: %6.2f Cord: %6.2f %6.2f %6.2f Name %X element: %s\n", get_dist_by_vec(hero_cord, from), from.x, from.y, from.z, i, buf);
 					}
 				}
 			}
+			if (closest_num == -1) {
+				continue;
+			}
+			float x, y, z;
+			get_cord_by_num(closest_num, &x, &y, &z);
+			float from[3] = {x, y, z};
+			float to[3];
+			world_to_screen(from, to);
+			SendMessage(hWnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
+			Sleep(100);
+			SendMessage(hWnd, WM_LBUTTONUP, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
 			Sleep(100);
 		}
 	}
@@ -82,6 +141,18 @@ int main(int argc, char** argv)
 	//printf("%f\n", (*matrix3);
 	CloseHandle(hProcess);
     return 0;
+}
+
+// float get_dist_by_vec(float *vec1, float *vec2)
+// {
+	// float tmp_vec[3] = {vec1[0] - vec2[0], vec1[1] - vec2[1], vec1[2] - vec2[2]};
+	// return sqrt(pow(tmp_vec[0], 2) + pow(tmp_vec[1], 2) + pow(tmp_vec[2], 2)); 
+// }
+
+float get_dist_by_vec(const Vector3 vec1, const Vector3 vec2)
+{
+	Vector3 tmp_vec = {vec1.x - vec2.x, vec1.y - vec2.y, vec1.z - vec2.z};
+	return sqrt(pow(tmp_vec.x, 2) + pow(tmp_vec.y, 2) + pow(tmp_vec.z, 2)); 
 }
 
 int world_to_screen(float* from, float* to)
@@ -108,9 +179,9 @@ int world_to_screen(float* from, float* to)
 		printf("w2c pm error\n");
 		return 0;
 	}
-	printf("\n");	
-	print_1x4_matrix(point_from_vm);
-	print_1x4_matrix(point_from_pm);
+	//printf("\n");	
+	//print_1x4_matrix(point_from_vm);
+	//print_1x4_matrix(point_from_pm);
 	to[0] = point_from_pm[0] * -1;
 	to[1] = point_from_pm[1] * -1;
 	int width = (int)(rect.right - rect.left);
@@ -125,9 +196,6 @@ int world_to_screen(float* from, float* to)
 	//SetCursorPos((int)to[0], (int)to[1]);
 	//Sleep(100);
 	//mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-	SendMessage(hWnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
-	Sleep(100);
-	SendMessage(hWnd, WM_LBUTTONUP, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
 	
 	return 1;
 }
@@ -163,10 +231,10 @@ void get_view_matrix()
 	read_bytes((PCVOID)(tmp + 0xA00), sizeof(tmp1), &tmp1);
 	read_bytes((PCVOID)(tmp1+ 0x150), 64, view_matrix);
 	read_bytes((PCVOID)(tmp1+ 0x190), 64, proj_matrix);
-	printf("Pointer:%lX\nPointer1:%lX\n\n",tmp,tmp1);
-	print_4x4_matrix(view_matrix);
-	printf("\n");
-	print_4x4_matrix(proj_matrix);
+	//printf("Pointer:%lX\nPointer1:%lX\n\n",tmp,tmp1);
+	//print_4x4_matrix(view_matrix);
+	//printf("\n");
+	//print_4x4_matrix(proj_matrix);
 }
 
 void get_player_cord(float *x, float *y, float *z)
@@ -188,7 +256,7 @@ void get_player_cord(float *x, float *y, float *z)
 	read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD8)),	sizeof(z), z);
 	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD0)),	sizeof(x), x);
 	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD4)),	sizeof(y), y);
-	printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
+	//printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
 	//read_bytes((PCVOID)(tmp),				sizeof(tmp), &tmp1);
 }
 
@@ -260,7 +328,7 @@ int get_num_elemets_in_entity()
 	read_bytes((PCVOID)(tmp + 0x160), 				sizeof(tmp), &tmp1);
 	read_bytes((PCVOID)(tmp1),						sizeof(tmp), &tmp);
 	read_bytes((PCVOID)(tmp + 0x108), 				sizeof(tmp), &tmp1);
-	printf("num elements in entity:%lX\n",tmp1);
+	//printf("num elements in entity:%lX\n",tmp1);
 	return (int)tmp1;
 }
 
@@ -291,7 +359,6 @@ void get_cord_by_num(int num, float *x, float *y, float *z)
 	DWORD baseEntityList = 0xFFFDDEC0;
 	DWORD tmp;
 	DWORD tmp1;
-	//FFFDDEC0->1014CC60->1014CCD0->158332B0+160->116BA650->117D0F50+120->11A91B20->1B589D80 + (2F8 * num) + 188 = HP
 
 	read_bytes((PCVOID)(baseEntityList),			sizeof(tmp), &tmp);
 	read_bytes((PCVOID)(tmp),						sizeof(tmp), &tmp1);
@@ -303,8 +370,6 @@ void get_cord_by_num(int num, float *x, float *y, float *z)
 	read_bytes((PCVOID)(tmp + (0x2F8 * num + 0xD0)),	sizeof(x), x);
 	read_bytes((PCVOID)(tmp + (0x2F8 * num + 0xD4)),	sizeof(y), y);
 	read_bytes((PCVOID)(tmp + (0x2F8 * num + 0xD8)),	sizeof(z), z);
-	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD0)),	sizeof(x), x);
-	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD4)),	sizeof(y), y);
 	//printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
 }
 

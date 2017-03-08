@@ -1,2 +1,2 @@
 begin: main.c
-	gcc -o main.exe main.c
+	gcc -lm -o main.exe main.c
