@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 	for (int i = 0; i <= max; i++){
 		char buf[128] = {};
 		if (get_name_by_num(i, buf, 128)){
-
+			
 			//if (strstr(buf, "flippy") != 0)
 			{
 				float x, y, z;
@@ -388,6 +388,25 @@ int get_cord_by_num(int num, float *x, float *y, float *z)
 	// read_bytes((PCVOID)(tmp + (0x2F8 * num + OFFSET_Y)), sizeof(y), y);
 	// read_bytes((PCVOID)(tmp + (0x2F8 * num + OFFSET_Z)), sizeof(z), z);
 	//printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
+}
+
+int get_unit_is_enemy_by_num(int num)
+{
+	DWORD tmp;
+	get_unit_info_by_offset(num, OFFSET_ISENEMY, sizeof(tmp), &tmp);
+	if (tmp == 1) {
+		return 1;
+	}
+	return 0;
+}
+int get_item_in_inventory_by_num(int num)
+{
+	DWORD tmp;
+	get_unit_info_by_offset(num, OFFSET_ININVENT, sizeof(tmp), &tmp);
+	if(tmp == 1) {
+		return 1;
+	}
+	return 0;
 }
 
 int get_unit_info_by_offset(int num, DWORD off , size_t size, void *data)
