@@ -39,8 +39,8 @@ int get_cord_by_num(int num, float *x, float *y, float *z);
 float get_dist_by_vec(const Vector3 vec1, const Vector3 vec2);
 DWORD get_entity_pointer();
 int get_unit_info_by_offset(int num, DWORD off , size_t size, void *data);
-
-
+int get_unit_is_enemy_by_num(int num);
+int get_item_in_inventory_by_num(int num);
 
 
 int main(int argc, char** argv)
