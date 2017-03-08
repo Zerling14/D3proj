@@ -78,19 +78,17 @@ int main(int argc, char** argv)
 	int max = get_num_elemets_in_entity();
 	int j = 0;
 
-	for (int i = 0; i <= max; i++){
+	for (int i = 0; i <= max; i++) {
 		char buf[128] = {};
-		if (get_name_by_num(i, buf, 128)){
-			
-			//if (strstr(buf, "flippy") != 0)
-			{
+		if (get_name_by_num(i, buf, 128)) {
+			if(get_unit_is_enemy_by_num(i)) {
 				float x, y, z;
 				get_cord_by_num(get_num_local_player(), &x, &y, &z);
 				Vector3 hero = {x, y, z};
 
 				get_cord_by_num(i, &x, &y, &z);
 				Vector3 from = {x, y, z};
-				printf("Dist:%7.2f Cord:%7.2f%7.2f%7.2f Name %X element: %s\n", get_dist_by_vec(hero, from), x, y, z, i, buf);
+				printf("Dist:%7.2f Cord:%7.2f %7.2f%7.2f Name %X element: %s\n", get_dist_by_vec(hero, from), x, y, z, i, buf);
 				j++;
 			}
 		}
@@ -220,7 +218,7 @@ int world_to_screen(float* from, float* to)
 	free(point_from_vm);
 	free(point_from_pm);
 	//printf("%d,%d\n", (int)to[0], (int)to[1]);
-	SetCursorPos((int)to[0], (int)to[1]);
+	//SetCursorPos((int)to[0], (int)to[1]);
 	//Sleep(100);
 	//mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 	
@@ -392,9 +390,11 @@ int get_cord_by_num(int num, float *x, float *y, float *z)
 
 int get_unit_is_enemy_by_num(int num)
 {
-	DWORD tmp;
-	get_unit_info_by_offset(num, OFFSET_ISENEMY, sizeof(tmp), &tmp);
-	if (tmp == 1) {
+	int tmp;
+	get_unit_info_by_offset(num, 0x190, sizeof(tmp), &tmp);
+	int tmp1;
+	get_unit_info_by_offset(num, 0x198, sizeof(tmp1), &tmp1);
+	if ((tmp == 0xA) && (tmp1 != 1)) {
 		return 1;
 	}
 	return 0;
@@ -403,9 +403,12 @@ int get_item_in_inventory_by_num(int num)
 {
 	DWORD tmp;
 	get_unit_info_by_offset(num, OFFSET_ININVENT, sizeof(tmp), &tmp);
-	if(tmp == 1) {
+	if (tmp == 1) {
 		return 1;
+	} else if ((int)tmp == -1) {
+		return -1;
 	}
+	
 	return 0;
 }
 
