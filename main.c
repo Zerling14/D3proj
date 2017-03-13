@@ -37,7 +37,6 @@ int get_num_elemets_in_entity();
 int get_name_by_num(int num, char* buf, int n);
 int get_cord_by_num(int num, float *x, float *y, float *z);
 Vector3 get_cord_by_num_in_vec(int num);
-//float get_dist_by_vec(float *vec1, float *vec2);
 float get_dist_by_vec(const Vector3 vec1, const Vector3 vec2);
 DWORD get_entity_pointer();
 int get_unit_info_by_offset(int num, DWORD off , size_t size, void *data);
@@ -267,9 +266,6 @@ int world_to_screen(float* from, float* to)
 		printf("w2c pm error\n");
 		return 0;
 	}
-	//printf("\n");	
-	//print_1x4_matrix(point_from_vm);
-	//print_1x4_matrix(point_from_pm);
 	to[0] = point_from_pm[0] * -1;
 	to[1] = point_from_pm[1] * -1;
 	int width = (int)(rect.right - rect.left);
@@ -282,10 +278,6 @@ int world_to_screen(float* from, float* to)
 	to[1] = y + rect.top;
 	free(point_from_vm);
 	free(point_from_pm);
-	//printf("%d,%d\n", (int)to[0], (int)to[1]);
-	//SetCursorPos((int)to[0], (int)to[1]);
-	//Sleep(100);
-	//mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 	
 	return 1;
 }
@@ -310,34 +302,18 @@ void get_process_handle()
 
 void get_view_matrix()
 {
-	// [[[BaseAddress + 0x26767C]+0x598]+0x1EC]+0x9F2
 	PDWORD BaseAddress = (PDWORD)0x01C12E98;
-	//PDWORD pdwAddress = ( PDWORD )*( PDWORD )(BaseAddress + 0xA0);
-	//PDWORD pdwFinalAddress = ( PDWORD )*( PDWORD )( pdwAddress + 150 );
 	DWORD tmp;
 	DWORD tmp1;
-	//DWORD tmp2;
 	read_bytes((PCVOID)(BaseAddress), sizeof(tmp), &tmp);
 	read_bytes((PCVOID)(tmp + 0xA00), sizeof(tmp1), &tmp1);
 	read_bytes((PCVOID)(tmp1+ 0x150), 64, view_matrix);
 	read_bytes((PCVOID)(tmp1+ 0x190), 64, proj_matrix);
-	//printf("Pointer:%lX\nPointer1:%lX\n\n",tmp,tmp1);
-	//print_4x4_matrix(view_matrix);
-	//printf("\n");
-	//print_4x4_matrix(proj_matrix);
 }
 
 void get_player_cord(float *x, float *y, float *z)
 {
-	//DWORD tmp = get_entity_pointer();
 	get_cord_by_num(get_num_local_player(), x, y, z);
-	// read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD0)),	sizeof(x), x);
-	// read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD4)),	sizeof(y), y);
-	// read_bytes((PCVOID)(tmp + (0x2F8 * get_num_local_player() + 0xD8)),	sizeof(z), z);
-	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD0)),	sizeof(x), x);
-	//read_bytes((PCVOID)(tmp1 + (0x1A590 + 0xD4)),	sizeof(y), y);
-	//printf("Pointer:%lX:x:%f:y:%f:z:%f\n", tmp, *x, *y, *z);
-	//read_bytes((PCVOID)(tmp),				sizeof(tmp), &tmp1);
 }
 
 DWORD get_num_local_player()
@@ -349,7 +325,6 @@ DWORD get_num_local_player()
 	read_bytes((PCVOID)(baseNumPlayer),			sizeof(tmp), &tmp);
 	read_bytes((PCVOID)(tmp + 0x8F4),			sizeof(tmp), &tmp1);
 	read_bytes((PCVOID)(tmp1 + 0x3c), 			1, &result);
-	//printf("get_num_local_player:%lX\n",result);
 	return result;
 }
 
@@ -380,18 +355,14 @@ void mul_matrix(void *matrix1, int x1, int y1,
 		return;
 	}
 	*matrix3 = calloc(x1 * y2, sizeof(float));
-	//*(float *)*matrix3 = 1;
-	//printf("%p\n", (float *) *matrix3 );
 	
 	for (int i = 0; i < x1; i++) {
 		for (int j = 0; j < y2; j++) {
 			float sum = 0;
 			for (int k = 0; k < y1; k++) {
 				sum += *((float *) matrix1 + 4 * i + k) * *((float *) matrix2 + 4 * k + j);
-				//printf("m1:%f : m2:%f\n",*((float *) matrix1 + 4 * i + k), *((float *) matrix2 + 4 * k + j));
 			}
 			*((float *) *matrix3 + 4 * i + j) = sum;
-			//printf("P:%p sum:%d\n",(float *) *matrix3 + 4 * i + j, (int)sum);
 		}
 	}
 }
@@ -419,7 +390,6 @@ int get_name_by_num(int num, char* buf, int n)
 		printf("Error get name by num\n");
 		return 0;
 	}
-	//read_bytes((PCVOID)(tmp + (0x2F8 * num) ),	4, &tmp1);
 	if ((int) tmp1 == -1) {
 		return 0;
 	}
