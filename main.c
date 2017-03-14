@@ -126,7 +126,7 @@ void up_item()
 	for (int i = 0; i <= max; i++) {
 		char buf[128] = {};
 		if (get_name_by_num(i, buf, 128)) {
-			if (!get_item_is_item(i) || get_item_in_inventory_by_num(i)) {
+			if (!get_item_is_item(i) || get_item_in_inventory_by_num(i) || strstr(buf, "HealthGlobe") || 0) {
 				continue;
 			}
 			if (closest_num == -1) {
@@ -162,6 +162,8 @@ void up_item()
 		float to[3];
 		world_to_screen(from, to);
 		board_normalizing(&to[0], &to[1], 1400, 150, 250, 700);
+		SendMessage(hWnd, WM_KEYDOWN, VK_MENU, 0);
+		SendMessage(hWnd, WM_KEYUP, VK_MENU, 0);
 		SendMessage(hWnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
 		Sleep(100);
 		SendMessage(hWnd, WM_LBUTTONUP, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
