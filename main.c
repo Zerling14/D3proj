@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
+#include "D3Tool.h"
 
 #define OFFSET_X		0xD0
 #define OFFSET_Y		0xD4
@@ -11,25 +12,18 @@
 #define OFFSET_ININVENT	0xBC
 #define OFFSET_ISITEM	0x180
 
-
-typedef struct {
-	float x;
-	float y;
-	float z;
-} Vector3;
-
 HANDLE hProcess;
 float view_matrix[4][4];
 float proj_matrix[4][4];
-int world_to_screen(float* from, float* to);
+
 HWND hWnd;
 float my_coords[3];
 HDC hDC;
+
 void get_process_handle();
 int read_bytes(PCVOID addr, int num, void* buf);
 void get_view_matrix();
 void print_4x4_matrix(void *matrix);
-void get_player_cord(float *x, float *y, float *z);
 DWORD get_num_local_player();
 void print_1x4_matrix(void *matrix);
 void mul_matrix(void *matrix1, int x1, int y1, void *matrix2, int x2, int y2, void **matrix3);
@@ -46,77 +40,108 @@ int get_item_is_item(int num);
 void move_cursor_to_vec3(Vector3 vec);
 void move_cursor_to_unit_by_num(int num);
 DWORD get_unit_info_by_offset_unsafe(int num, DWORD off);
-void up_item();
 void board_normalizing(float *x, float *y, float top_cap_x, float top_cap_y, float bottom_cap_x, float bottom_cap_y);
+void up_item();
 
 
-int main(int argc, char** argv)
+int get_enemy_pos_list(EnemyPosList **list)
 {
 	get_process_handle();
-	printf("hWnd:%d\n",(int)hWnd);
 	if (hWnd == NULL) {
-		printf("Diablo 3 not found\n");
 		return 1;
 	}
-	
-	while(1) {
-		int max = get_num_elemets_in_entity();
-		int j = 0;
-		int closest_num = -1;
-		for (int i = 0; i <= max; i++) {
-			char buf[128] = {};
-			if (get_name_by_num(i, buf, 128)) {
-				if (!get_unit_is_enemy_by_num(i)) {
-					continue;
-				}
-				if (closest_num == -1) {
-					closest_num = i;
-				}
-				float x, y, z;
-				get_cord_by_num(get_num_local_player(), &x, &y, &z);
-				Vector3 hero = {x, y, z};
-				get_cord_by_num(closest_num, &x, &y, &z);
-				Vector3 closest_cord = {x, y, z};
-				get_cord_by_num(i, &x, &y, &z);
-				Vector3 from = {x, y, z};
-				if (get_dist_by_vec(hero, from) <  get_dist_by_vec(hero, closest_cord)) {
-					closest_num = i;
-				}
-				printf("Dist:%7.2f Cord:%7.2f %7.2f%7.2f Name %X element: %s\n", get_dist_by_vec(hero, from), x, y, z, i, buf);
-				j++;
-			}
+	int max = get_num_elemets_in_entity();
+	int j = 0;
+	*list = malloc(sizeof(EnemyPosList));
+	(**list).list = calloc(max, sizeof(Vector3));
+	for (int i = 0; i <= max; i++) {
+		char buf[128] = {};
+		if (!get_name_by_num(i, buf, 128)) {
+			continue;
 		}
-		if ((closest_num == -1) || get_dist_by_vec(get_cord_by_num_in_vec(get_num_local_player()), get_cord_by_num_in_vec(closest_num)) > 30) {
-			up_item();
-			if ((closest_num == -1)) {
-				continue;
-			}
+		if (!get_unit_is_enemy_by_num(i)) {
+			continue;
 		}
-		float x, y, z;
-		get_cord_by_num(closest_num, &x, &y, &z);
-		float from[3] = {x, y, z};
-		float to[3];
-		world_to_screen(from, to);
-		board_normalizing(&to[0], &to[1], 1400, 150, 250, 700);
-		if ((to[0] > 250) && (to[0] < 1400) && (to[1] < 700) && (to[1] > 150)) {
-			SendMessage(hWnd, WM_KEYDOWN, VK_SHIFT, 0);
-		}
-		SendMessage(hWnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
-		Sleep(100);
-		SendMessage(hWnd, WM_LBUTTONUP, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
-		if ((to[0] > 250) && (to[0] < 1400) && (to[1] < 700) && (to[1] > 150)) {
-			SendMessage(hWnd, WM_KEYUP, VK_SHIFT, 0);
-		}
-		printf("Total:%d", j);
-		Sleep(200);
-		if (GetAsyncKeyState(0x43)) {
-			break;
-		}
+		(**list).list[j] = get_cord_by_num_in_vec(i);
+		j++;
 	}
-
-	CloseHandle(hProcess);
-    return 0;
+	(*list)->size = j;
+	return 0;
 }
+
+// int main(int argc, char** argv)
+// {
+	// EnemyPosList *enemy_pos_list;
+	// get_enemy_pos_list(&enemy_pos_list);
+	// printf("size: %d", enemy_pos_list->size);
+	// free(enemy_pos_list->list);
+	// free(enemy_pos_list);
+	// return 0;
+	// get_process_handle();
+	// printf("hWnd:%d\n",(int)hWnd);
+	// if (hWnd == NULL) {
+		// printf("Diablo 3 not found\n");
+		// return 1;
+	// }
+	
+	// while(1) {
+		// int max = get_num_elemets_in_entity();
+		// int j = 0;
+		// int closest_num = -1;
+		// for (int i = 0; i <= max; i++) {
+			// char buf[128] = {};
+			// if (get_name_by_num(i, buf, 128)) {
+				// if (!get_unit_is_enemy_by_num(i)) {
+					// continue;
+				// }
+				// if (closest_num == -1) {
+					// closest_num = i;
+				// }
+				// float x, y, z;
+				// get_cord_by_num(get_num_local_player(), &x, &y, &z);
+				// Vector3 hero = {x, y, z};
+				// get_cord_by_num(closest_num, &x, &y, &z);
+				// Vector3 closest_cord = {x, y, z};
+				// get_cord_by_num(i, &x, &y, &z);
+				// Vector3 from = {x, y, z};
+				// if (get_dist_by_vec(hero, from) <  get_dist_by_vec(hero, closest_cord)) {
+					// closest_num = i;
+				// }
+				// printf("Dist:%7.2f Cord:%7.2f %7.2f%7.2f Name %X element: %s\n", get_dist_by_vec(hero, from), x, y, z, i, buf);
+				// j++;
+			// }
+		// }
+		// if ((closest_num == -1) || get_dist_by_vec(get_cord_by_num_in_vec(get_num_local_player()), get_cord_by_num_in_vec(closest_num)) > 30) {
+			//up_item();
+			// if ((closest_num == -1)) {
+				// continue;
+			// }
+		// }
+		// float x, y, z;
+		// get_cord_by_num(closest_num, &x, &y, &z);
+		// float from[3] = {x, y, z};
+		// float to[3];
+		// world_to_screen(from, to);
+		// board_normalizing(&to[0], &to[1], 1400, 150, 250, 700);
+		// if ((to[0] > 250) && (to[0] < 1400) && (to[1] < 700) && (to[1] > 150)) {
+			// SendMessage(hWnd, WM_KEYDOWN, VK_SHIFT, 0);
+		// }
+		// SendMessage(hWnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
+		// Sleep(100);
+		// SendMessage(hWnd, WM_LBUTTONUP, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
+		// if ((to[0] > 250) && (to[0] < 1400) && (to[1] < 700) && (to[1] > 150)) {
+			// SendMessage(hWnd, WM_KEYUP, VK_SHIFT, 0);
+		// }
+		// printf("Total:%d", j);
+		//Sleep(200);
+		// if (GetAsyncKeyState(0x43)) {
+			// break;
+		// }
+	// }
+
+	// CloseHandle(hProcess);
+    // return 0;
+// }
 
 void up_item()
 {
@@ -320,13 +345,13 @@ void get_player_cord(float *x, float *y, float *z)
 
 DWORD get_num_local_player()
 {
-	DWORD baseNumPlayer = 0x1C12E98; //- Base entity list(not entity)
+	DWORD baseNumPlayer = 0x205c0f0; //- Base entity list(not entity)
 	DWORD tmp;
 	DWORD tmp1;
 	DWORD result = 0;
-	read_bytes((PCVOID)(baseNumPlayer),			sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp + 0x8F4),			sizeof(tmp), &tmp1);
-	read_bytes((PCVOID)(tmp1 + 0x3c), 			1, &result);
+	read_bytes((PCVOID)(baseNumPlayer),	sizeof(tmp), &tmp);
+	read_bytes((PCVOID)(tmp + 0x8E4), sizeof(tmp), &tmp1);
+	read_bytes((PCVOID)(tmp1 + 0x3c), 1, &result);
 	return result;
 }
 
@@ -386,7 +411,7 @@ int get_num_elemets_in_entity()
 
 int get_name_by_num(int num, char* buf, int n)
 {
-	DWORD tmp = get_entity_pointer();
+	//DWORD tmp = get_entity_pointer();
 	DWORD tmp1;
 	if (!get_unit_info_by_offset(num, OFFSET_ID , sizeof(tmp1), &tmp1)) {
 		printf("Error get name by num\n");
@@ -395,11 +420,14 @@ int get_name_by_num(int num, char* buf, int n)
 	if ((int) tmp1 == -1) {
 		return 0;
 	}
+	if ((int) (tmp1 & 0xFFFF) != num) {
+		return 0;
+	}
 	if (!get_unit_info_by_offset(num, OFFSET_NAME , n, buf)) {
 		printf("Error get name by num\n");
 		return 0;
 	}
-	if (buf == "") {
+	if (buf[0] == 0) {
 		return 0;
 	}
 	return 1;
@@ -425,11 +453,11 @@ int get_cord_by_num(int num, float *x, float *y, float *z)
 int get_unit_is_enemy_by_num(int num)
 {
 	int tmp;
-	get_unit_info_by_offset(num, 0x190, sizeof(tmp), &tmp);
+	get_unit_info_by_offset(num, 0x188, sizeof(tmp), &tmp);
 	int tmp1;
-	get_unit_info_by_offset(num, 0x198, sizeof(tmp1), &tmp1);
+	get_unit_info_by_offset(num, 0x190, sizeof(tmp1), &tmp1);
 	int tmp2;
-	get_unit_info_by_offset(num, 0x188, sizeof(tmp2), &tmp2);
+	get_unit_info_by_offset(num, 0x180, sizeof(tmp2), &tmp2);
 	if ((tmp == 0xA) && (tmp1 != 1) && (tmp2 > 0)) {
 		return 1;
 	}
@@ -463,7 +491,7 @@ int get_unit_info_by_offset(int num, DWORD off , size_t size, void *data)
 {
 	DWORD tmp = get_entity_pointer();
 
-	if (!read_bytes((PCVOID)(tmp + (0x2F8 * num + off)), size, data)) {
+	if (!read_bytes((PCVOID)(tmp + (0x2F0 * num + off)), size, data)) {
 		printf("Error get unit info by offset\n");
 		return 0;
 	}
@@ -474,7 +502,7 @@ DWORD get_unit_info_by_offset_unsafe(int num, DWORD off)
 {
 	DWORD tmp = get_entity_pointer();
 	DWORD data;
-	if (!read_bytes((PCVOID)(tmp + (0x2F8 * num + off)), sizeof(data), &data)) {
+	if (!read_bytes((PCVOID)(tmp + (0x2F0 * num + off)), sizeof(data), &data)) {
 		printf("Error get unit info by offset\n");
 		return 0;
 	}
