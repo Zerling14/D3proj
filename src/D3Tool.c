@@ -20,36 +20,18 @@ HWND hWnd;
 float my_coords[3];
 HDC hDC;
 
-void get_process_handle();
-int read_bytes(PCVOID addr, int num, void* buf);
-void get_view_matrix();
-void print_4x4_matrix(void *matrix);
-DWORD get_num_local_player();
-void print_1x4_matrix(void *matrix);
-void mul_matrix(void *matrix1, int x1, int y1, void *matrix2, int x2, int y2, void **matrix3);
-int get_num_elemets_in_entity();
-int get_name_by_num(int num, char* buf, int n);
-int get_cord_by_num(int num, float *x, float *y, float *z);
-Vector3 get_cord_by_num_in_vec(int num);
-float get_dist_by_vec(const Vector3 vec1, const Vector3 vec2);
-DWORD get_entity_pointer();
-int get_unit_info_by_offset(int num, DWORD off , size_t size, void *data);
-int get_unit_is_enemy_by_num(int num);
-int get_item_in_inventory_by_num(int num);
-int get_item_is_item(int num);
-void move_cursor_to_vec3(Vector3 vec);
-void move_cursor_to_unit_by_num(int num);
-DWORD get_unit_info_by_offset_unsafe(int num, DWORD off);
-void board_normalizing(float *x, float *y, float top_cap_x, float top_cap_y, float bottom_cap_x, float bottom_cap_y);
-void up_item();
-void print_entity_list();
-
-int get_enemy_pos_list(EnemyPosList **list)
+int init_d3tool()
 {
 	get_process_handle();
 	if (hWnd == NULL) {
 		return 1;
 	}
+	return 0;
+}
+
+int get_enemy_pos_list(EnemyPosList **list)
+{
+	init_d3tool();
 	int max = get_num_elemets_in_entity();
 	int j = 0;
 	*list = malloc(sizeof(EnemyPosList));
@@ -69,83 +51,13 @@ int get_enemy_pos_list(EnemyPosList **list)
 	return 0;
 }
 
-// int main(int argc, char** argv)
-// {
-	// EnemyPosList *enemy_pos_list;
-	// get_enemy_pos_list(&enemy_pos_list);
-	// printf("size: %d", enemy_pos_list->size);
-	// free(enemy_pos_list->list);
-	// free(enemy_pos_list);
-	// return 0;
-	// get_process_handle();
-	// printf("hWnd:%d\n",(int)hWnd);
-	// if (hWnd == NULL) {
-		// printf("Diablo 3 not found\n");
-		// return 1;
-	// }
-	
-	// while(1) {
-		// int max = get_num_elemets_in_entity();
-		// int j = 0;
-		// int closest_num = -1;
-		// for (int i = 0; i <= max; i++) {
-			// char buf[128] = {};
-			// if (get_name_by_num(i, buf, 128)) {
-				// if (!get_unit_is_enemy_by_num(i)) {
-					// continue;
-				// }
-				// if (closest_num == -1) {
-					// closest_num = i;
-				// }
-				// float x, y, z;
-				// get_cord_by_num(get_num_local_player(), &x, &y, &z);
-				// Vector3 hero = {x, y, z};
-				// get_cord_by_num(closest_num, &x, &y, &z);
-				// Vector3 closest_cord = {x, y, z};
-				// get_cord_by_num(i, &x, &y, &z);
-				// Vector3 from = {x, y, z};
-				// if (get_dist_by_vec(hero, from) <  get_dist_by_vec(hero, closest_cord)) {
-					// closest_num = i;
-				// }
-				// printf("Dist:%7.2f Cord:%7.2f %7.2f%7.2f Name %X element: %s\n", get_dist_by_vec(hero, from), x, y, z, i, buf);
-				// j++;
-			// }
-		// }
-		// if ((closest_num == -1) || get_dist_by_vec(get_cord_by_num_in_vec(get_num_local_player()), get_cord_by_num_in_vec(closest_num)) > 30) {
-			//up_item();
-			// if ((closest_num == -1)) {
-				// continue;
-			// }
-		// }
-		// float x, y, z;
-		// get_cord_by_num(closest_num, &x, &y, &z);
-		// float from[3] = {x, y, z};
-		// float to[3];
-		// world_to_screen(from, to);
-		// board_normalizing(&to[0], &to[1], 1400, 150, 250, 700);
-		// if ((to[0] > 250) && (to[0] < 1400) && (to[1] < 700) && (to[1] > 150)) {
-			// SendMessage(hWnd, WM_KEYDOWN, VK_SHIFT, 0);
-		// }
-		// SendMessage(hWnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
-		// Sleep(100);
-		// SendMessage(hWnd, WM_LBUTTONUP, MK_LBUTTON, MAKELPARAM((int) to[0], (int) to[1]));
-		// if ((to[0] > 250) && (to[0] < 1400) && (to[1] < 700) && (to[1] > 150)) {
-			// SendMessage(hWnd, WM_KEYUP, VK_SHIFT, 0);
-		// }
-		// printf("Total:%d", j);
-		//Sleep(200);
-		// if (GetAsyncKeyState(0x43)) {
-			// break;
-		// }
-	// }
-
-	// CloseHandle(hProcess);
-    // return 0;
-// }
-
 void print_entity_list()
 {
 	int max = get_num_elemets_in_entity();
+	if (max == 0xFFFF) {
+		printf("entity list is FFFF\n");
+		return;
+	}
 	int j = 0;
 	for (int i = 0; i <= max; i++) {
 		char buf[128] = {};
@@ -158,6 +70,7 @@ void print_entity_list()
 		get_cord_by_num(i, &x, &y, &z);
 		Vector3 from = {x, y, z};
 		printf("Dist:%7.2f Cord:%7.2f %7.2f%7.2f Name %X element: %s\n", get_dist_by_vec(hero, from), x, y, z, i, buf);
+		j++;
 	}
 	printf("Total: %d\n", j);
 }
