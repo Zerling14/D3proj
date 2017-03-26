@@ -88,10 +88,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 	RECT rect; // стр-ра, определ€юща€ размер клиентской области
 	COLORREF colorText = RGB(255, 0, 0); // задаЄм цвет текста
 	HPEN hPen;
+	
+	HDC hdcMem;
+	HBITMAP hbmMem;
+	HANDLE hOld;
 	switch (uMsg){
 	case WM_CREATE:
 	{
-		SetTimer( hWnd, 5, 100, NULL );
+		SetTimer( hWnd, 5, 34, NULL );
 		return 0;
 	}
 	case WM_TIMER:
@@ -99,24 +103,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 		switch(wParam)
 		{
 		case 5:
-			InvalidateRect(hWnd, NULL, 1);
+			InvalidateRect(hWnd, NULL, 0);
 			break;
 		}
 	}
 	case WM_PAINT: // если нужно нарисовать, то:
 		hDC = BeginPaint(hWnd, &ps); // инициализируем контекст устройства
 		GetClientRect(hWnd, &rect); // получаем ширину и высоту области дл€ рисовани€
-		SetTextColor(hDC, colorText); // устанавливаем цвет контекстного устройства
+		hdcMem = CreateCompatibleDC(hDC);
+		hbmMem = CreateCompatibleBitmap(hDC, rect.right - rect.left, rect.bottom - rect.top);
+		hOld = SelectObject(hdcMem, hbmMem);
+		SetTextColor(hdcMem, colorText); // устанавливаем цвет контекстного устройства
 		EnemyPosList *enemy_pos_list;
 		get_enemy_pos_list(&enemy_pos_list);
 		char buffer[10];
-		DrawText(hDC, itoa(enemy_pos_list->size, buffer, 10), -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER); // рисуем текст
+		DrawText(hdcMem, itoa(enemy_pos_list->size, buffer, 10), -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER); // рисуем текст
 		float x, y, z;
 		get_player_cord(&x, &y, &z);
 		for (int enemy_num = 0; enemy_num <= enemy_pos_list->size; enemy_num++) {
-			if ((x - enemy_pos_list->list[enemy_num].x <= 250) && (x - enemy_pos_list->list[enemy_num].x >= -250)
-				&& (y - enemy_pos_list->list[enemy_num].y <= 250) && (y - enemy_pos_list->list[enemy_num].y >= -250)) {
-				SetPixel(hDC, 1448 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 172 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), RGB(255, 255, 0)); //
+			if ((x - enemy_pos_list->list[enemy_num].x <= 500) && (x - enemy_pos_list->list[enemy_num].x >= -500)
+				&& (y - enemy_pos_list->list[enemy_num].y <= 500) && (y - enemy_pos_list->list[enemy_num].y >= -500)) {
+				SetPixel(hdcMem, 1448 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 172 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), RGB(255, 255, 0)); //
 				
 			}
 		}
@@ -126,13 +133,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 		//541.3394165 - x 303.7431946 = 250
 		//710.973938 - y 466.0963135 = 250
 		hPen = CreatePen(PS_SOLID, 2, RGB(255, 0, 0)); //—оздаЄтс€ объект
-		SelectObject(hDC, hPen); //ќбъект делаетс€ текущим
-		Line(hDC, 1323, 47, 1577, 47);
-		Line(hDC, 1323, 47, 1323, 302);
-		Line(hDC, 1577, 47, 1577, 302);
-		Line(hDC, 1323, 302, 1577, 302);
-		SetPixel(hDC, 1448, 172, RGB(255, 0, 0));
-		SetPixel(hDC, 1448, 173, RGB(255, 0, 0));
+		SelectObject(hdcMem, hPen); //ќбъект делаетс€ текущим
+		Line(hdcMem, 1323, 47, 1577, 47);
+		Line(hdcMem, 1323, 47, 1323, 302);
+		Line(hdcMem, 1577, 47, 1577, 302);
+		Line(hdcMem, 1323, 302, 1577, 302);
+		SetPixel(hdcMem, 1448, 172, RGB(255, 0, 0));
+		SetPixel(hdcMem, 1448, 173, RGB(255, 0, 0));
+		BitBlt(hDC, 0, 0, rect.right - rect.left, rect.bottom - rect.top, hdcMem, 0, 0, SRCCOPY);
+		
+		SelectObject(hdcMem, hOld);
+		DeleteObject(hbmMem);
+		DeleteDC(hdcMem);
 		EndPaint(hWnd, &ps); // заканчиваем рисовать
 		break;
 	case WM_DESTROY: // если окошко закрылось, то:

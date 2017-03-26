@@ -42,7 +42,7 @@ void move_cursor_to_unit_by_num(int num);
 DWORD get_unit_info_by_offset_unsafe(int num, DWORD off);
 void board_normalizing(float *x, float *y, float top_cap_x, float top_cap_y, float bottom_cap_x, float bottom_cap_y);
 void up_item();
-
+void print_entity_list();
 
 int get_enemy_pos_list(EnemyPosList **list)
 {
@@ -142,6 +142,25 @@ int get_enemy_pos_list(EnemyPosList **list)
 	// CloseHandle(hProcess);
     // return 0;
 // }
+
+void print_entity_list()
+{
+	int max = get_num_elemets_in_entity();
+	int j = 0;
+	for (int i = 0; i <= max; i++) {
+		char buf[128] = {};
+		if (!get_name_by_num(i, buf, 128)) {
+			continue;
+		}
+		float x, y, z;
+		get_cord_by_num(get_num_local_player(), &x, &y, &z);
+		Vector3 hero = {x, y, z};
+		get_cord_by_num(i, &x, &y, &z);
+		Vector3 from = {x, y, z};
+		printf("Dist:%7.2f Cord:%7.2f %7.2f%7.2f Name %X element: %s\n", get_dist_by_vec(hero, from), x, y, z, i, buf);
+	}
+	printf("Total: %d\n", j);
+}
 
 void up_item()
 {
