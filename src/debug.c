@@ -6,6 +6,6 @@ int main ()
 		printf("error init\n");
 		return 1;
 	}
-	print_entity_list();
+	print_enemy_list();
 	return 0;
 }

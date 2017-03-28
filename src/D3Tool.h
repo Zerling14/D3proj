@@ -11,6 +11,7 @@ typedef struct {
 
 typedef struct {
 	Vector3 *list;
+	char *type_list;
 	int size;
 } EnemyPosList;
 
@@ -41,5 +42,6 @@ DWORD get_unit_info_by_offset_unsafe(int num, DWORD off);
 void board_normalizing(float *x, float *y, float top_cap_x, float top_cap_y, float bottom_cap_x, float bottom_cap_y);
 void up_item();
 void print_entity_list();
+void print_enemy_list();
 
 #endif

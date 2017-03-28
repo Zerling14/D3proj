@@ -92,6 +92,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 	HDC hdcMem;
 	HBITMAP hbmMem;
 	HANDLE hOld;
+	
+	COLORREF color;
 	switch (uMsg){
 	case WM_CREATE:
 	{
@@ -123,7 +125,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 		for (int enemy_num = 0; enemy_num <= enemy_pos_list->size; enemy_num++) {
 			if ((x - enemy_pos_list->list[enemy_num].x <= 500) && (x - enemy_pos_list->list[enemy_num].x >= -500)
 				&& (y - enemy_pos_list->list[enemy_num].y <= 500) && (y - enemy_pos_list->list[enemy_num].y >= -500)) {
-				SetPixel(hdcMem, 1448 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 172 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), RGB(255, 255, 0)); //
+				if ( enemy_pos_list->type_list[enemy_num] == 0) {
+					color = RGB(100, 100, 100);
+				} else if ( enemy_pos_list->type_list[enemy_num] == 1) {
+					color = RGB(0, 150, 255);
+				} else if ( enemy_pos_list->type_list[enemy_num] == 2) {
+					color = RGB(255, 200, 0);
+				} else if ( enemy_pos_list->type_list[enemy_num] == 3) {
+					color = RGB(255, 100, 0);
+				}
+				SetPixel(hdcMem, 1449 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 173 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), color); //
+				SetPixel(hdcMem, 1449 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 172 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), color); //
+				SetPixel(hdcMem, 1449 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 171 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), color); //
+				SetPixel(hdcMem, 1448 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 173 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), color); //
+				SetPixel(hdcMem, 1448 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 172 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), color); //
+				SetPixel(hdcMem, 1448 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 171 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), color); //
+				SetPixel(hdcMem, 1447 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 173 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), color); //
+				SetPixel(hdcMem, 1447 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 172 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), color); //
+				SetPixel(hdcMem, 1447 + 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * cos(-150) - (y - enemy_pos_list->list[enemy_num].y) * sin(-150)), 171 - 0.6 * ((x - enemy_pos_list->list[enemy_num].x) * sin(-150) + (y - enemy_pos_list->list[enemy_num].y) * cos(-150)), color); //
 				
 			}
 		}

@@ -11,6 +11,7 @@
 #define OFFSET_ISENEMY	0x94
 #define OFFSET_ININVENT	0xBC
 #define OFFSET_ISITEM	0x180
+#define OFFSET_ENEMY_TYPE	0xB8
 
 HANDLE hProcess;
 float view_matrix[4][4];
@@ -36,6 +37,7 @@ int get_enemy_pos_list(EnemyPosList **list)
 	int j = 0;
 	*list = malloc(sizeof(EnemyPosList));
 	(**list).list = calloc(max, sizeof(Vector3));
+	(**list).type_list = calloc(max, sizeof(char));
 	for (int i = 0; i <= max; i++) {
 		char buf[128] = {};
 		if (!get_name_by_num(i, buf, 128)) {
@@ -45,6 +47,7 @@ int get_enemy_pos_list(EnemyPosList **list)
 			continue;
 		}
 		(**list).list[j] = get_cord_by_num_in_vec(i);
+		(**list).type_list[j] = get_unit_info_by_offset_unsafe(i, OFFSET_ENEMY_TYPE);
 		j++;
 	}
 	(*list)->size = j;
@@ -62,6 +65,33 @@ void print_entity_list()
 	for (int i = 0; i <= max; i++) {
 		char buf[128] = {};
 		if (!get_name_by_num(i, buf, 128)) {
+			continue;
+		}
+		float x, y, z;
+		get_cord_by_num(get_num_local_player(), &x, &y, &z);
+		Vector3 hero = {x, y, z};
+		get_cord_by_num(i, &x, &y, &z);
+		Vector3 from = {x, y, z};
+		printf("Dist:%7.2f Cord:%7.2f %7.2f%7.2f Name %X element: %s\n", get_dist_by_vec(hero, from), x, y, z, i, buf);
+		j++;
+	}
+	printf("Total: %d\n", j);
+}
+
+void print_enemy_list()
+{
+	int max = get_num_elemets_in_entity();
+	if (max == 0xFFFF) {
+		printf("entity list is FFFF\n");
+		return;
+	}
+	int j = 0;
+	for (int i = 0; i <= max; i++) {
+		char buf[128] = {};
+		if (!get_name_by_num(i, buf, 128)) {
+			continue;
+		}
+		if (!get_unit_is_enemy_by_num(i)) {
 			continue;
 		}
 		float x, y, z;
@@ -261,11 +291,11 @@ void get_process_handle()
 
 void get_view_matrix()
 {
-	PDWORD BaseAddress = (PDWORD)0x01C12E98;
+	PDWORD BaseAddress = (PDWORD)0x205c0f0;
 	DWORD tmp;
 	DWORD tmp1;
 	read_bytes((PCVOID)(BaseAddress), sizeof(tmp), &tmp);
-	read_bytes((PCVOID)(tmp + 0xA00), sizeof(tmp1), &tmp1);
+	read_bytes((PCVOID)(tmp + 0x9f0), sizeof(tmp1), &tmp1);
 	read_bytes((PCVOID)(tmp1+ 0x150), 64, view_matrix);
 	read_bytes((PCVOID)(tmp1+ 0x190), 64, proj_matrix);
 }
